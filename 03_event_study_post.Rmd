@@ -1,0 +1,217 @@
+---
+title: "03_event_study"
+output: html_document
+date: "2023-08-11"
+---
+
+
+
+#All
+
+```{r}
+title='log (Spending)'
+event_sp_all_post = feols(lspend ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|                    ## Other controls
+		  placekey+date+county_fips^date,                             ## FEs
+		 cluster = ~placekey,                          ## Clustered SEs
+		 data = df_post_match)
+
+event_cus_all_post = feols(lcus ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|                    ## Other controls
+		  placekey+date+county_fips^date,                             ## FEs
+		 cluster = ~placekey,                          ## Clustered SEs
+		 data = df_post_match)
+
+
+```
+
+```{r}
+event_sp_all_post = feols(log(cus_inc+1) ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|                    ## Other controls
+		  placekey+date+county_fips^date,                             ## FEs
+		 cluster = ~placekey,                          ## Clustered SEs
+		 data = df_post_match)
+iplot(event_sp_all_post)
+```
+
+```{r}
+
+event_sp_dis = feols(lspend ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|                    ## Other controls
+		  placekey+date+county_fips^date,                             ## FEs
+		 cluster = ~placekey,                          ## Clustered SEs
+		 data = df_dis_pre_match)
+summary(event_sp_dis)
+
+event_cus_dis = feols(lcus ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|                    ## Other controls
+		  placekey+date+county_fips^date,                             ## FEs
+		 cluster = ~placekey,                          ## Clustered SEs
+		 data = df_dis_pre_match)
+
+```
+
+
+
+
+```{r}
+library(broom)
+
+##### ALL
+event_sp_all_post_raw<-tidy(event_sp_all_post)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+num_lags=28
+event_sp_all_post_raw<-rbind(event_sp_all_post_raw[1:num_lags,],new_row,event_sp_all_post_raw[(num_lags+1):nrow(event_sp_all_post_raw), ])
+event_sp_all_post_plot<-event_sp_all_post_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-(num_lags+1), num_lags),
+         type='Spending')
+
+################
+
+event_cus_all_post_raw<-tidy(event_cus_all_post)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+event_cus_all_post_raw<-rbind(event_cus_all_post_raw[1:num_lags,],new_row,event_cus_all_post_raw[(num_lags+1):nrow(event_cus_all_post_raw), ])
+event_cus_all_post_plot<-event_cus_all_post_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-(num_lags+1), num_lags),
+         type='Customers')
+
+
+```
+```{r}
+cut_left=4
+cut_right=1
+ggplot(event_sp_all_post_plot[1+cut_left:nrow(event_sp_all_post_plot)-cut_right,], aes(x = time_to_treat)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  geom_hline(yintercept= 0,linetype='dashed')+
+  geom_vline(xintercept= -1,color='red')+
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/event_sp_all_ribbon_post.png', dpi = 800, width = 9, height = 7, units = "in")
+
+##########
+
+ggplot(event_cus_all_post_plot[1+cut_left:nrow(event_cus_all_post_plot)-cut_right,], aes(x = time_to_treat)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  geom_hline(yintercept= 0,linetype='dashed')+
+  geom_vline(xintercept= -1,color='red')+
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/event_cus_all_ribbon_post.png', dpi = 800, width = 9, height = 7, units = "in")
+
+
+```
+
+
+
+```{r}
+ggplot(event_sp_dis_plot, aes(x = time_to_treat)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('event_sp_dis_ribbon.png', dpi = 800, width = 9, height = 7, units = "in")
+
+##########
+
+ggplot(event_cus_dis_plot, aes(x = time_to_treat)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('event_cus_dis_ribbon.png', dpi = 800, width = 9, height = 7, units = "in")
+
+
+##########
+
+ggplot(event_distance_dis_plot, aes(x = time_to_treat)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('event_distance_dis_ribbon.png', dpi = 800, width = 9, height = 7, units = "in")
+```
+
+

@@ -1,0 +1,304 @@
+---
+title: "hetero"
+output: html_document
+date: "2023-08-23"
+---
+```{r}
+df_pre_match<-read.csv('data/df_pre_match.csv')
+```
+
+```{r}
+#1
+inc_bk_sp150<-feols(log((cus_.150k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row.150k<-tidy(inc_bk_sp150)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '>150k')
+#2
+inc_bk_sp100.150k<-feols(log((cus_100.150k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(inc_bk_sp100.150k)
+row100.150k<-tidy(inc_bk_sp100.150k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '100k-150k')
+#3
+inc_bk_sp75.100k<-feols(log((cus_75.100k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row75.100k<-tidy(inc_bk_sp75.100k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '75k-100k')
+
+#4
+inc_bk_sp60.75k<-feols(log((cus_60.75k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row60.75k<-tidy(inc_bk_sp60.75k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '60k-75k')
+#5
+inc_bk_sp45.60k<-feols(log((cus_45.60k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row45.60k<-tidy(inc_bk_sp45.60k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '45k-60k')
+#6
+inc_bk_sp25.45k<-feols(log((cus_25.45k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row25.45k<-tidy(inc_bk_sp25.45k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '25k-45k')
+#7
+inc_bk_sp.25k<-feols(log((cus_.25k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+row.25k<-tidy(inc_bk_sp.25k)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '<25k')
+```
+
+```{r}
+inc_bk_sp_post<-rbind(row.150k,row100.150k,row75.100k,row60.75k,row45.60k,row25.45k,row.25k)
+inc_bk_sp_post_plot<-inc_bk_sp_post%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE, bucket=seq(1,7),
+         type='Spending')
+inc_bk_sp_post_plot$Variable=factor(inc_bk_sp_post_plot$Variable,levels=c('>150k','100k-150k','75k-100k','60k-75k','45k-60k','25k-45k','<25k')) 
+```
+
+```{r}
+ggplot(data=inc_bk_sp_post_plot,aes(x = Variable, 
+                    y = Coefficient))+
+        geom_point(position=position_dodge(width = 0.1),size=3,stroke=1) + 
+          geom_line(position=position_dodge(width = 0.1),lwd = 0.7) +
+        geom_linerange(aes(x = Variable,
+                     ymin = conf.low_95,
+                     ymax = conf.high_95),alpha=0.7,
+                   lwd = 0.5,position=position_dodge(width = 0.1))+
+   geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x="Income group")+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12)),
+        legend.box.background = element_rect(fill="transparent",colour=NA),
+        legend.background = element_rect(fill='transparent'),
+        legend.text=element_text(size=20, family="Arial",margin = margin(t = 3)), 
+        panel.background=element_blank(),
+        panel.border = element_rect(colour = 'black', fill=NA),
+        panel.grid.major = element_line(colour = "lightgrey"), 
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 0.5,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/inc_cus_post.png', dpi = 800, width = 12, height = 9, units = "in")
+```
+
+```{r}
+# ggplot(inc_bk_sp_post_plot, aes(x = bucket)) +
+#   geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+#   geom_line(aes(y = Coefficient), color = "blue") +
+#   labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+#   theme_minimal()+
+#   theme(legend.key=element_blank(),
+#         # axis.ticks=element_blank(),
+#         axis.ticks.length=unit(.25, "cm"),
+#         axis.text=element_text(size=20,family="Arial"), 
+#         axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+#         axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+#         axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+#         # legend.box.background = element_rect(colour = "black"),
+#         text = element_text(size = 20),
+#         plot.margin = margin(t = 0.5,  # Top margin
+#                              r = 1,  # Right margin
+#                              b = 0.5,  # Bottom margin
+#                              l = 0.5, "cm"))
+```
+
+```{r}
+#1
+inc_bk_sp150_pre<-feols(log((cus_.150k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row.150k_pre<-tidy(inc_bk_sp150_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '>150k')
+#2
+inc_bk_sp100.150k_pre<-feols(log((cus_100.150k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row100.150k_pre<-tidy(inc_bk_sp100.150k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '100k-150k')
+#3
+inc_bk_sp75.100k_pre<-feols(log((cus_75.100k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row75.100k_pre<-tidy(inc_bk_sp75.100k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '75k-100k')
+
+#4
+inc_bk_sp60.75k_pre<-feols(log((cus_60.75k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row60.75k_pre<-tidy(inc_bk_sp60.75k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '60k-75k')
+#5
+inc_bk_sp45.60k_pre<-feols(log((cus_45.60k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row45.60k_pre<-tidy(inc_bk_sp45.60k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '45k-60k')
+#6
+inc_bk_sp25.45k_pre<-feols(log((cus_25.45k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row25.45k_pre<-tidy(inc_bk_sp25.45k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '25k-45k')
+#7
+inc_bk_sp.25k_pre<-feols(log((cus_.25k)+1)~ port_treat|        
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+row.25k_pre<-tidy(inc_bk_sp.25k_pre)%>%
+     dplyr::rename(Variable = term,
+     Coefficient = estimate,
+     SE = std.error) %>% 
+  dplyr::select(-statistic,-p.value)%>%
+  mutate(Variable = '<25k')
+```
+```{r}
+inc_bk_sp_pre<-rbind(row.150k_pre,row100.150k_pre,row75.100k_pre,row60.75k_pre,row45.60k_pre,row25.45k_pre,row.25k_pre)
+inc_bk_sp_pre_plot<-inc_bk_sp_pre%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE, bucket=seq(1,7),
+         type='Spending')
+inc_bk_sp_pre_plot 
+
+inc_bk_sp_pre_plot$Variable=factor(inc_bk_sp_pre_plot$Variable,levels=c('>150k','100k-150k','75k-100k','60k-75k','45k-60k','25k-45k','<25k')) 
+```
+```{r}
+ggplot(data=inc_bk_sp_pre_plot,aes(x = Variable, 
+                    y = Coefficient))+
+        geom_point(position=position_dodge(width = 0.1),size=3,stroke=1) + 
+          geom_line(position=position_dodge(width = 0.1),lwd = 0.7) +
+        geom_linerange(aes(x = Variable,
+                     ymin = conf.low_95,
+                     ymax = conf.high_95),alpha=0.7,
+                   lwd = 0.5,position=position_dodge(width = 0.1))+
+   geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x="Income group")+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12)),
+        legend.box.background = element_rect(fill="transparent",colour=NA),
+        legend.background = element_rect(fill='transparent'),
+        legend.text=element_text(size=20, family="Arial",margin = margin(t = 3)), 
+        panel.background=element_blank(),
+        panel.border = element_rect(colour = 'black', fill=NA),
+        panel.grid.major = element_line(colour = "lightgrey"), 
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 0.5,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/inc_cus_pre.png', dpi = 800, width = 12, height = 9, units = "in")
+```
+
+
+```{r}
+ggplot(inc_bk_sp_pre_plot, aes(x = bucket)) +
+  geom_ribbon(aes(ymin = conf.low_95, ymax = conf.high_95), fill = "blue", alpha = 0.3) +
+  geom_line(aes(y = Coefficient), color = "blue") +
+  labs(x = "Time to Treatment (Month)", y = "Coefficient") +
+  theme_minimal()+
+  theme(legend.key=element_blank(),
+        # axis.ticks=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=20,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        # legend.box.background = element_rect(colour = "black"),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+```
+
+
