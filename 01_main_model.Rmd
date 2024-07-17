@@ -1,0 +1,129 @@
+```{r}
+library(lubridate)
+library(lmtest)
+library(sandwich)
+library(plyr)
+library(fixest)
+library(lfe)
+library(MatchIt)
+library(staggered)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+###All
+##2019
+```{r}
+#Customer counts
+mod_cus2_pre = feols(lcus ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus2_pre)
+
+#By distance
+mod_cus_bin2_pre = feols(lcus ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_bin2_pre)
+
+#Spending
+mod_sp2_pre = feols(lspend ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_sp2_pre)
+
+#By distance
+mod_sp_bin2_pre = feols(lspend ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_sp_bin2_pre)
+
+```
+
+##2021-2023
+```{r}
+#Customer counts
+mod_cus2_post = feols(lcus ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus2_post)
+
+#By distance
+mod_cus_bin2_post = feols(lcus ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_bin2_post)
+
+#Spending
+mod_sp2_post = feols(lspend ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_sp2_post)
+
+#By distance
+mod_sp_bin2_post = feols(lspend ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_sp_bin2_post)
+
+```
+
+## Disadvantaged
+#2019
+```{r}
+mod_cus_dis2_pre = feols(lcus ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match_dis)
+summary(mod_cus_dis2_pre)
+
+mod_cus_dis_bin2_pre = feols(lcus ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match_dis)
+
+mod_sp_dis2_pre = feols(lspend ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match_dis)
+
+mod_sp_dis_bin2_pre = feols(lspend ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match_dis)
+```
+
+#Disadvantaged
+#2021-2023
+```{r}
+mod_cus_dis2_post = feols(lcus ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match_dis)
+
+mod_cus_dis_bin2_post = feols(lcus ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match_dis)
+
+mod_sp_dis2_post = feols(lspend ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match_dis)
+
+mod_sp_dis_bin2_post = feols(lspend ~ I(Post*X0_100m)+I(Post*X100_200m)+I(Post*X200_300m)+I(Post*X300_400m)+I(Post*X400_500m)|
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match_dis)
+```
+
+
