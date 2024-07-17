@@ -1,0 +1,223 @@
+
+```{r}
+library(lubridate)
+library(lmtest)
+library(sandwich)
+library(plyr)
+library(fixest)
+library(lfe)
+library(MatchIt)
+library(staggered)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+mod_cus_.25k_post = feols(log(cus_.25k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_.25k_post)
+
+mod_cus_25.45k_post = feols(log(cus_25.45k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_25.45k_post)
+
+mod_cus_45.60k_post = feols(log(cus_45.60k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_45.60k_post)
+
+mod_cus_60.75k_post = feols(log(cus_60.75k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_60.75k_post)
+
+mod_cus_75.100k_post = feols(log(cus_75.100k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_75.100k_post)
+
+mod_cus_100.150k_post = feols(log(cus_100.150k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_100.150k_post)
+
+mod_cus_.150k_post = feols(log(cus_.150k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_cus_.150k_post)
+```
+
+```{r}
+out.sp2_post<-tidy(mod_sp_bin2_post)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         distance=seq(100, 500, by = 100),
+         type='Spending')
+```
+
+```{r}
+inc_cus_post<-rbind(tidy(mod_cus_.25k_post),tidy(mod_cus_25.45k_post),tidy(mod_cus_45.60k_post),tidy(mod_cus_60.75k_post),tidy(mod_cus_75.100k_post),tidy(mod_cus_100.150k_post),tidy(mod_cus_.150k_post))
+inc_cus_post$term<-c('<25k','25k-45k','45k-60k','60k-75k','75k-100k','100k-150k','>150k')
+inc_cus_post<-inc_cus_post%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE)
+inc_cus_post$Variable <- factor(inc_cus_post$Variable, levels = c('<25k','25k-45k','45k-60k','60k-75k','75k-100k','100k-150k','>150k'))
+
+```
+
+```{r}
+ggplot(data=inc_cus_post,aes(x = Variable, 
+                    y = Coefficient))+ 
+        geom_point(size=3,stroke=1) + 
+        geom_linerange(aes(x = Variable,
+                     ymin = conf.low_95,
+                     ymax = conf.high_95),alpha=0.7,
+                   lwd = 0.5)+
+   geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x="Income Group")+
+  theme(legend.position = c(0.6, 0.2))+
+  theme(legend.key=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=16,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        legend.box.background = element_rect(fill="transparent",colour=NA),
+        legend.background = element_rect(fill='transparent'),
+        legend.text=element_text(size=20, family="Arial",margin = margin(t = 3)), 
+        legend.position = c(0.7,0.8),
+        panel.background=element_blank(),
+        panel.border = element_rect(colour = 'black', fill=NA),
+        panel.grid.major = element_line(colour = "lightgrey"), 
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/income_post.png', dpi = 800, width = 9.5, height = 7, units = "in")
+```
+
+```{r}
+mod_cus_.25k_pre = feols(log(cus_.25k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_.25k_pre)
+
+mod_cus_25.45k_pre = feols(log(cus_25.45k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_25.45k_pre)
+
+mod_cus_45.60k_pre = feols(log(cus_45.60k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_45.60k_pre)
+
+mod_cus_60.75k_pre = feols(log(cus_60.75k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_60.75k_pre)
+
+mod_cus_75.100k_pre = feols(log(cus_75.100k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_75.100k_pre)
+
+mod_cus_100.150k_pre = feols(log(cus_100.150k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_100.150k_pre)
+
+mod_cus_.150k_pre = feols(log(cus_.150k+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_cus_.150k_pre)
+```
+
+```{r}
+out.sp2_pre<-tidy(mod_sp_bin2_pre)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         distance=seq(100, 500, by = 100),
+         type='Spending')
+```
+
+
+```{r}
+inc_cus_pre<-rbind(tidy(mod_cus_.25k_pre),tidy(mod_cus_25.45k_pre),tidy(mod_cus_45.60k_pre),tidy(mod_cus_60.75k_pre),tidy(mod_cus_75.100k_pre),tidy(mod_cus_100.150k_pre),tidy(mod_cus_.150k_pre))
+inc_cus_pre$term<-c('<25k','25k-45k','45k-60k','60k-75k','75k-100k','100k-150k','>150k')
+inc_cus_pre<-inc_cus_pre%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE)
+inc_cus_pre$Variable <- factor(inc_cus_pre$Variable, levels = c('<25k','25k-45k','45k-60k','60k-75k','75k-100k','100k-150k','>150k'))
+```
+
+```{r}
+ggplot(data=inc_cus_pre,aes(x = Variable, 
+                    y = Coefficient))+ 
+        geom_point(size=3,stroke=1) + 
+        geom_linerange(aes(x = Variable,
+                     ymin = conf.low_95,
+                     ymax = conf.high_95),alpha=0.7,
+                   lwd = 0.5)+
+   geom_hline(yintercept= 0,linetype='dashed')+
+  labs(x="Income Group")+
+  theme(legend.position = c(0.6, 0.2))+
+  theme(legend.key=element_blank(),
+        axis.ticks.length=unit(.25, "cm"),
+        axis.text=element_text(size=16,family="Arial"), 
+        axis.text.x = element_text(vjust = 0.5, hjust=0.5,margin = margin(b = 12,t = 5)),
+        axis.title.y = element_text(size=25, family="Arial",margin = margin(r = 12)),
+        axis.title.y.right = element_text(size=25, family="Arial",margin = margin(l = 12, r = 5)),
+        legend.box.background = element_rect(fill="transparent",colour=NA),
+        legend.background = element_rect(fill='transparent'),
+        legend.text=element_text(size=20, family="Arial",margin = margin(t = 3)), 
+        legend.position = c(0.7,0.8),
+        panel.background=element_blank(),
+        panel.border = element_rect(colour = 'black', fill=NA),
+        panel.grid.major = element_line(colour = "lightgrey"), 
+        panel.grid.minor = element_line(colour = "lightgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        text = element_text(size = 20),
+        plot.margin = margin(t = 0.5,  # Top margin
+                             r = 1,  # Right margin
+                             b = 0.5,  # Bottom margin
+                             l = 0.5, "cm"))
+ggsave('plots/income_pre.png', dpi = 800, width = 9.5, height = 7, units = "in")
+```
+
+
+

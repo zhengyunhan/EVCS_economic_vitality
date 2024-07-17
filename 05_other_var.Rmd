@@ -1,0 +1,48 @@
+
+```{r}
+#distance_from_home
+mod_dist2_pre = feols(log(distance_from_home+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+
+#median_dwell_time
+mod_dwell2_pre = feols(log(median_dwell+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+
+#average customer income
+mod_inc2_pre = feols(log(cus_inc+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_pre_match)
+summary(mod_dist2_pre)
+
+## 2021-2023
+
+#distance_from_home
+mod_dist2_post = feols(log(distance_from_home+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+
+#median_dwell_time
+mod_dwell2_post = feols(log(median_dwell+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+
+#average customer income
+mod_inc2_post = feols(log(cus_inc+1) ~ port_treat|                
+		  placekey+date+county_fips^date,
+		  cluster = ~placekey, 
+		 data = df_post_match)
+summary(mod_dist2_post)
+```
+
+```{r}
+etable(list(mod_dist2_pre,mod_dwell2_pre,mod_inc2_pre,mod_dist2_post,mod_dwell2_post,mod_inc2_post), tex=TRUE)
+```
+
+

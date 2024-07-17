@@ -1,0 +1,120 @@
+---
+title: "03_event_study"
+output: html_document
+date: "2023-08-11"
+---
+
+#2019
+```{r}
+title='log (Spending)'
+event_sp_all = feols(lspend ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)| 
+		  placekey+date+county_fips^date,   
+		 cluster = ~placekey, 
+		 data = df_pre_match)
+
+event_cus_all = feols(lcus ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|  
+		  placekey+date+county_fips^date, 
+		 cluster = ~placekey,     
+		 data = df_pre_match)
+```
+
+```{r}
+library(broom)
+
+##### ALL
+event_sp_all_raw<-tidy(event_sp_all)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+event_sp_all_raw<-rbind(event_sp_all_raw[1:10,],new_row,event_sp_all_raw[11:nrow(event_sp_all_raw), ])
+event_sp_all_plot<-event_sp_all_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-11, 10),
+         type='Spending')
+
+################
+
+event_cus_all_raw<-tidy(event_cus_all)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+event_cus_all_raw<-rbind(event_cus_all_raw[1:10,],new_row,event_cus_all_raw[11:nrow(event_cus_all_raw), ])
+event_cus_all_plot<-event_cus_all_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-11, 10),
+         type='Customer Count')
+
+
+```
+
+
+#2021-2023
+```{r}
+title='log (Spending)'
+event_sp_all_post = feols(lspend ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)| 
+		  placekey+date+county_fips^date,  
+		 cluster = ~placekey,  
+		 data = df_post_match)
+
+event_cus_all_post = feols(lcus ~ i(time_to_treat, I(ev_treat_500*avg_port), ref = -1)|
+		  placekey+date+county_fips^date, 
+		 cluster = ~placekey,  
+		 data = df_post_match)
+```
+
+```{r}
+library(broom)
+
+##### ALL
+event_sp_all_post_raw<-tidy(event_sp_all_post)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+num_lags=28
+event_sp_all_post_raw<-rbind(event_sp_all_post_raw[1:num_lags,],new_row,event_sp_all_post_raw[(num_lags+1):nrow(event_sp_all_post_raw), ])
+event_sp_all_post_plot<-event_sp_all_post_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-(num_lags+1), num_lags),
+         type='Spending')
+
+################
+
+event_cus_all_post_raw<-tidy(event_cus_all_post)%>%
+           dplyr::rename(Variable = term,
+                  Coefficient = estimate,
+                  SE = std.error) %>% dplyr::select(-statistic,
+                              -p.value)
+new_row=data.frame(
+  Variable = 'base',
+  Coefficient = 0,
+  SE = 0
+)
+event_cus_all_post_raw<-rbind(event_cus_all_post_raw[1:num_lags,],new_row,event_cus_all_post_raw[(num_lags+1):nrow(event_cus_all_post_raw), ])
+event_cus_all_post_plot<-event_cus_all_post_raw%>%
+  mutate(conf.low_95=Coefficient-1.96*SE,conf.high_95=Coefficient+1.96*SE,
+         time_to_treat=seq(-(num_lags+1), num_lags),
+         type='Customers')
+
+
+```
+
+
+
